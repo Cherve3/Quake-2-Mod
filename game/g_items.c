@@ -36,6 +36,8 @@ void Weapon_GrenadeLauncher (edict_t *ent);
 void Weapon_Railgun (edict_t *ent);
 void Weapon_BFG (edict_t *ent);
 
+void Weapon_Null (edict_t *ent);
+
 gitem_armor_t jacketarmor_info	= { 25,  50, .30, .00, ARMOR_JACKET};
 gitem_armor_t combatarmor_info	= { 50, 100, .60, .30, ARMOR_COMBAT};
 gitem_armor_t bodyarmor_info	= {100, 200, .80, .60, ARMOR_BODY};
@@ -501,7 +503,8 @@ qboolean Pickup_Ammo (edict_t *ent, edict_t *other)
 
 	if (weapon && !oldcount)
 	{
-		if (other->client->pers.weapon != ent->item && ( !deathmatch->value || other->client->pers.weapon == FindItem("blaster") ) )
+//		if (other->client->pers.weapon != ent->item && ( !deathmatch->value || other->client->pers.weapon == FindItem("blaster") ) )
+		if (other->client->pers.weapon != ent->item && (!deathmatch->value || other->client->pers.weapon == FindItem("Hands")))
 			other->client->newweapon = ent->item;
 	}
 
@@ -1288,6 +1291,26 @@ gitem_t	itemlist[] =
 /* weapon_blaster (.3 .3 1) (-16 -16 -16) (16 16 16)
 always owned, never in the world
 */
+	{
+		"weapon_null",           //  The map entity name. d&#111;nt include this in a map whatever y&#111;u d&#111;.
+		NULL,                    // The pickup functi&#111;n
+		Use_Weapon,              // H&#111;w t&#111; use
+		NULL,                    // the dr&#111;p functi&#111;n
+		Weapon_Null,             //What the use functi&#111;n is
+		"misc/w_pkup.wav",
+		"models/nullweapon.md2", 0,
+		"models/nullweapon.md2", //The m&#111;dels stuff.&#40;This is my Hands m&#111;del&#41;
+		"w_blaster",             //Ic&#111;n t&#111; be used. y&#111;u c&#111;uld create an&#111;ther, y&#111;u pr&#111;bably sh&#111;uld
+		"Hands",             //Pickup name. use this t&#111; give the item t&#111; s&#111;me&#111;ne at the start &#111;f the game
+		0,
+		0,
+		NULL,
+		IT_WEAPON|IT_STAY_COOP,
+		WEAP_BLASTER,            // the m&#111;del index, just an integer defined in g_l&#111;cal.h
+		NULL,
+		0,
+		""
+	},
 	{
 		"weapon_blaster", 
 		NULL,

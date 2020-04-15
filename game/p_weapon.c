@@ -269,7 +269,8 @@ void NoAmmoWeaponChange (edict_t *ent)
 		ent->client->newweapon = FindItem ("shotgun");
 		return;
 	}
-	ent->client->newweapon = FindItem ("blaster");
+	//ent->client->newweapon = FindItem ("blaster");
+	ent->client->newweapon = FindItem("Hands");
 }
 
 /*
@@ -847,12 +848,21 @@ void Blaster_Fire (edict_t *ent, vec3_t g_offset, int damage, qboolean hyper, in
 void Weapon_Blaster_Fire (edict_t *ent)
 {
 	int		damage;
+	vec3_t tempvec;
 
 	if (deathmatch->value)
 		damage = 15;
 	else
 		damage = 10;
 	Blaster_Fire (ent, vec3_origin, damage, false, EF_BLASTER);
+
+	VectorSet(tempvec, 0, 8, 0);
+	VectorAdd(tempvec, vec3_origin, tempvec);
+	Blaster_Fire(ent, tempvec, damage, false, EF_BLASTER);
+
+	VectorSet(tempvec, 0, -8, 0);
+	VectorAdd(tempvec, vec3_origin, tempvec);
+	Blaster_Fire(ent, tempvec, damage, false, EF_BLASTER);
 	ent->client->ps.gunframe++;
 }
 
@@ -1428,6 +1438,58 @@ void Weapon_BFG (edict_t *ent)
 	static int	fire_frames[]	= {9, 17, 0};
 
 	Weapon_Generic (ent, 8, 32, 55, 58, pause_frames, fire_frames, weapon_bfg_fire);
+}
+
+void Null_Fire(edict_t *ent)
+{
+	int	i;
+	vec3_t		start;
+	vec3_t		forward, right;
+	vec3_t		angles;
+	int			damage = 5; //change towhatever
+	int			kick = 2; //dittohere
+	vec3_t		offset;
+
+	if (ent ->client ->ps.gunframe == 11)//rename 11 toafter y&#111;u&#39;re attack frame
+	{
+		ent ->client ->ps.gunframe++;
+		return;
+	}
+
+	AngleVectors (ent ->client ->v_angle, forward, right, NULL);
+
+	VectorScale (forward, -2, ent ->client ->kick_origin);
+	ent->client->kick_angles[0] = -2;
+
+	VectorSet(offset, 0, 8, ent->viewheight - 8);
+	P_ProjectSource (ent ->client, ent ->s.origin, offset, forward, right, start); //where d&#111;es the hit start fr&#111;m?
+
+	if (is_quad)
+	{
+		damage *= 4;
+		kick *= 4;
+	}
+
+	// get start / end p&#111;siti&#111;ns
+	VectorAdd (ent ->client ->v_angle, ent ->client ->kick_angles, angles);
+	AngleVectors (angles, forward, right, NULL);
+	VectorSet(offset, 0, 8, ent->viewheight - 8);
+	P_ProjectSource (ent ->client, ent ->s.origin, offset, forward, right, start);
+	fire_punch (ent, start, forward, 45, damage, 200, 1, MOD_PUNCH); // yep, matches the fire_ function	
+
+	ent ->client ->ps.gunframe++; //NEEDED
+	PlayerNoise(ent, start, PNOISE_WEAPON); //NEEDED
+
+	//	if &#40;&#33; (&#40;int)dmflags-&#62;value & DF_INFINITE_AMMO ) )
+	//		ent-&#62;client-&#62;pers.invent&#111;ry&#91;ent-&#62;client-&#62;amm&#111;_index&#93;--; // c0mment these out to prevent the Minus NULL Ammobug
+}
+
+void Weapon_Null (edict_t *ent)
+{
+	static int	pause_frames[] = { 10, 21, 0 };
+	static int	fire_frames[] = { 6, 0 }; // Frame stuff here
+
+	Weapon_Generic (ent, 3, 9, 22, 24, pause_frames, fire_frames, Null_Fire);
 }
 
 
