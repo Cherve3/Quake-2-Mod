@@ -383,10 +383,16 @@ void ClientObituary (edict_t *self, edict_t *inflictor, edict_t *attacker)
 				message = "tried to invade";
 				message2 = "'s personal space";
 				break;
-			case MOD_PUNCH:
-				message ="took";
-				message2 = "'s fist in the face";
+			case MOD_KATANA:
+				message ="sliced by";
+				message2 = "'s katana";
 				break;
+			case MOD_KUNAI:
+				message = "stabbed by";
+				message2 = "'s kunai";
+			case MOD_BOW:
+				message = "sniped by";
+				message2 = "'s arrow";
 			}
 			if (message)
 			{
@@ -425,7 +431,7 @@ void TossClientWeapon (edict_t *self)
 	if (! self->client->pers.inventory[self->client->ammo_index] )
 		item = NULL;
 //	if (item && (strcmp (item->pickup_name, "Blaster") == 0))
-	if (item && (strcmp(item->pickup_name, "Hands") == 0))
+	if (item && (strcmp(item->pickup_name, "Katana") == 0))
 		item = NULL;
 
 	if (!((int)(dmflags->value) & DF_QUAD_DROP))
@@ -616,7 +622,7 @@ void InitClientPersistant (gclient_t *client)
 	memset (&client->pers, 0, sizeof(client->pers));
 
 	//item = FindItem("Blaster");
-	item = FindItem("Hands");
+	item = FindItem("Katana");
 	client->pers.selected_item = ITEM_INDEX(item);
 	client->pers.inventory[client->pers.selected_item] = 1;
 
@@ -631,6 +637,8 @@ void InitClientPersistant (gclient_t *client)
 	client->pers.max_grenades	= 50;
 	client->pers.max_cells		= 200;
 	client->pers.max_slugs		= 50;
+	client->pers.max_kunai		= 50;
+	client->pers.max_arrows		= 50;
 
 	client->pers.connected = true;
 }
@@ -1747,6 +1755,8 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 		if (other->inuse && other->client->chase_target == ent)
 			UpdateChaseCam(other);
 	}
+
+	gi.cprintf(ent,PRINT_HIGH, "%s", "Light Level: "+ ent->light_level);
 }
 
 

@@ -28,6 +28,8 @@ static byte		is_silenced;
 
 
 void weapon_grenade_fire (edict_t *ent, qboolean held);
+void Weapon_Kunai_Fire(edict_t *ent);
+void Weapon_Bow_Fire(edict_t *ent);
 
 
 static void P_ProjectSource (gclient_t *client, vec3_t point, vec3_t distance, vec3_t forward, vec3_t right, vec3_t result)
@@ -183,6 +185,22 @@ void ChangeWeapon (edict_t *ent)
 		ent->client->grenade_time = 0;
 	}
 
+	if (ent->client->kunai_time)
+	{
+		ent->client->kunai_time = level.time;
+		ent->client->weapon_sound = 0;
+		Weapon_Kunai_Fire(ent);
+		ent->client->kunai_time = 0;
+	}
+
+	if (ent->client->bow_time)
+	{
+		ent->client->bow_time = level.time;
+		ent->client->weapon_sound = 0;
+		Weapon_Bow_Fire(ent);
+		ent->client->bow_time = 0;
+	}
+
 	ent->client->pers.lastweapon = ent->client->pers.weapon;
 	ent->client->pers.weapon = ent->client->newweapon;
 	ent->client->newweapon = NULL;
@@ -270,7 +288,7 @@ void NoAmmoWeaponChange (edict_t *ent)
 		return;
 	}
 	//ent->client->newweapon = FindItem ("blaster");
-	ent->client->newweapon = FindItem("Hands");
+	ent->client->newweapon = FindItem("Katana");
 }
 
 /*
@@ -1440,29 +1458,37 @@ void Weapon_BFG (edict_t *ent)
 	Weapon_Generic (ent, 8, 32, 55, 58, pause_frames, fire_frames, weapon_bfg_fire);
 }
 
-void Null_Fire(edict_t *ent)
+/*
+======================================================================
+
+Katana
+
+======================================================================
+*/
+void Katana_Fire(edict_t *ent)
 {
+
 	int	i;
 	vec3_t		start;
 	vec3_t		forward, right;
 	vec3_t		angles;
-	int			damage = 5; //change towhatever
-	int			kick = 2; //dittohere
+	int			damage = 10;
+	int			kick = 2;
 	vec3_t		offset;
 
-	if (ent ->client ->ps.gunframe == 11)//rename 11 toafter y&#111;u&#39;re attack frame
+	if (ent ->client ->ps.gunframe == 11)//rename 11 toafter youre attack frame
 	{
 		ent ->client ->ps.gunframe++;
 		return;
 	}
 
-	AngleVectors (ent ->client ->v_angle, forward, right, NULL);
+	AngleVectors (ent->client->v_angle, forward, right, NULL);
 
-	VectorScale (forward, -2, ent ->client ->kick_origin);
+	VectorScale (forward, -2, ent->client->kick_origin);
 	ent->client->kick_angles[0] = -2;
 
 	VectorSet(offset, 0, 8, ent->viewheight - 8);
-	P_ProjectSource (ent ->client, ent ->s.origin, offset, forward, right, start); //where d&#111;es the hit start fr&#111;m?
+	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start); //where does the hit start from?
 
 	if (is_quad)
 	{
@@ -1470,27 +1496,126 @@ void Null_Fire(edict_t *ent)
 		kick *= 4;
 	}
 
-	// get start / end p&#111;siti&#111;ns
+	// get start / end positions
 	VectorAdd (ent ->client ->v_angle, ent ->client ->kick_angles, angles);
 	AngleVectors (angles, forward, right, NULL);
 	VectorSet(offset, 0, 8, ent->viewheight - 8);
 	P_ProjectSource (ent ->client, ent ->s.origin, offset, forward, right, start);
-	fire_punch (ent, start, forward, 45, damage, 200, 1, MOD_PUNCH); // yep, matches the fire_ function	
+	fire_katana (ent, start, forward, 45, damage*5, 200, 1, MOD_KATANA);
 
 	ent ->client ->ps.gunframe++; //NEEDED
 	PlayerNoise(ent, start, PNOISE_WEAPON); //NEEDED
 
-	//	if &#40;&#33; (&#40;int)dmflags-&#62;value & DF_INFINITE_AMMO ) )
-	//		ent-&#62;client-&#62;pers.invent&#111;ry&#91;ent-&#62;client-&#62;amm&#111;_index&#93;--; // c0mment these out to prevent the Minus NULL Ammobug
 }
 
-void Weapon_Null (edict_t *ent)
+void Weapon_Katana (edict_t *ent)
 {
 	static int	pause_frames[] = { 10, 21, 0 };
 	static int	fire_frames[] = { 6, 0 }; // Frame stuff here
 
-	Weapon_Generic (ent, 3, 9, 22, 24, pause_frames, fire_frames, Null_Fire);
+	Weapon_Generic (ent, 3, 9, 22, 24, pause_frames, fire_frames, Katana_Fire);
 }
 
+/*
+======================================================================
+
+KUNAI
+
+======================================================================
+*/
+void Weapon_Kunai_Fire(edict_t *ent)
+{
+	vec3_t	offset, start;
+	vec3_t	forward, right;
+	int		damage = 5;
+	int		speed;
+
+	if (is_quad)
+		damage *= 4;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+
+	VectorScale(forward, -2, ent->client->kick_origin);
+	ent->client->kick_angles[0] = -1;
+
+	VectorSet(offset, 8, 8, ent->viewheight - 8);
+	P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
+
+	speed = 400;
+	fire_kunai(ent, start, forward, damage, speed);
+
+	// send muzzle flash
+	gi.WriteByte(svc_muzzleflash);
+	gi.WriteShort(ent - g_edicts);
+	gi.WriteByte(MZ_UNUSED | is_silenced);
+	gi.multicast(ent->s.origin, MULTICAST_PVS);
+
+	ent->client->ps.gunframe++;
+
+	PlayerNoise(ent, start, PNOISE_WEAPON);
+
+	if (!((int)dmflags->value & DF_INFINITE_AMMO))
+		ent->client->pers.inventory[ent->client->ammo_index]--;
+
+	//damage = 100 + (int)(random() * 20.0);
+}
+
+void Weapon_Kunai(edict_t *ent)
+{
+	static int	pause_frames[] = { 25, 33, 42, 50, 0 };
+	static int	fire_frames[] = { 5, 0 };
+
+	Weapon_Generic(ent, 4, 12, 50, 54, pause_frames, fire_frames, Weapon_Kunai_Fire);
+}
+/*
+======================================================================
+
+Bow
+
+======================================================================
+*/
+void Weapon_Bow_Fire(edict_t *ent)
+{
+	vec3_t	offset, start;
+	vec3_t	forward, right;
+	int		damage = 10;
+	int		speed;
+
+	if (is_quad)
+		damage *= 4;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+
+	VectorScale(forward, -2, ent->client->kick_origin);
+	ent->client->kick_angles[0] = -1;
+
+	VectorSet(offset, 8, 8, ent->viewheight - 8);
+	P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
+
+	speed = 800;
+	fire_bow(ent, start, forward, damage, speed);
+
+	// send muzzle flash
+	gi.WriteByte(svc_muzzleflash);
+	gi.WriteShort(ent - g_edicts);
+	gi.WriteByte(MZ_UNUSED | is_silenced);
+	gi.multicast(ent->s.origin, MULTICAST_PVS);
+
+	ent->client->ps.gunframe++;
+
+	PlayerNoise(ent, start, PNOISE_WEAPON);
+
+	if (!((int)dmflags->value & DF_INFINITE_AMMO))
+		ent->client->pers.inventory[ent->client->ammo_index]--;
+}
+
+void Weapon_Bow(edict_t *ent)
+{
+	static int	pause_frames[] = { 25, 33, 42, 50, 0 };
+	static int	fire_frames[] = { 5, 0 };
+
+	Weapon_Generic(ent, 4, 12, 50, 54, pause_frames, fire_frames, Weapon_Bow_Fire);
+}
 
 //======================================================================
+

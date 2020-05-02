@@ -915,7 +915,7 @@ void fire_bfg (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, f
 	gi.linkentity (bfg);
 }
 
-void fire_punch(edict_t *self, vec3_t start, vec3_t aim, int reach, int damage, int kick, int quiet, int mo){
+void fire_katana(edict_t *self, vec3_t start, vec3_t aim, int reach, int damage, int kick, int quiet, int mo){
 
 	vec3_t forward, right, up;
 	vec3_t v;
@@ -939,7 +939,7 @@ void fire_punch(edict_t *self, vec3_t start, vec3_t aim, int reach, int damage, 
 		VectorMA(self->velocity, 75, up, self->velocity);
 
 		T_Damage(tr.ent, self, self, vec3_origin, tr.ent->s.origin, vec3_origin, damage, kick / 2, DAMAGE_ENERGY, mo);
-		gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/phitw1.wav"), 1, ATTN_IDLE, 0);
+		gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/hgrent1a.wav"), 1, ATTN_IDLE, 0);
 		
 		if (!quiet){
 			gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/meatht.wav"), 1, ATTN_NORM, 0);
@@ -955,7 +955,149 @@ void fire_punch(edict_t *self, vec3_t start, vec3_t aim, int reach, int damage, 
 		gi.WritePosition (tr.endpos);
 		gi.WriteDir (point);
 		gi.multicast (tr.endpos, MULTICAST_PVS);
-		gi.sound (self, CHAN_AUTO, gi.soundindex("weapo ns / phitw2.wav"), 1, ATTN_NORM, 0);
+		gi.sound (self, CHAN_AUTO, gi.soundindex("weapons/hgrent1a.wav"), 1, ATTN_NORM, 0);
 
 	}
+}
+
+/*
+=================
+fire_kunai
+=================
+*/
+static void Kunai_Touch(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf)
+{
+	vec3_t		origin;
+	int			n;
+
+	if (other == ent->owner)
+		return;
+
+	if (surf && (surf->flags & SURF_SKY))
+	{
+		G_FreeEdict(ent);
+		return;
+	}
+
+	if (ent->owner->client)
+		PlayerNoise(ent->owner, ent->s.origin, PNOISE_IMPACT);
+
+	// calculate position for the explosion entity
+	VectorMA(ent->s.origin, -0.02, ent->velocity, origin);
+
+	if (other->takedamage)
+	{
+		T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, 0, MOD_KUNAI);
+	}
+
+	gi.WriteByte(svc_temp_entity);
+	if (ent->waterlevel)
+		gi.WriteByte(TE_TELEPORT_EFFECT);
+	else
+		gi.WriteByte(TE_TELEPORT_EFFECT);
+	gi.WritePosition(origin);
+	gi.multicast(ent->s.origin, MULTICAST_PHS);
+
+	G_FreeEdict(ent);
+}
+
+void fire_kunai(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed)
+{
+	edict_t	*kunai;
+
+	kunai = G_Spawn();
+	VectorCopy(start, kunai->s.origin);
+	VectorCopy(dir, kunai->movedir);
+	vectoangles(dir, kunai->s.angles);
+	VectorScale(dir, speed, kunai->velocity);
+	kunai->movetype = MOVETYPE_FLYMISSILE;
+	kunai->clipmask = MASK_SHOT;
+	kunai->solid = SOLID_BBOX;
+	kunai->s.effects |= EF_ANIM_ALL;
+	VectorClear(kunai->mins);
+	VectorClear(kunai->maxs);
+	kunai->s.modelindex = gi.modelindex("models/objects/kunai/tris.md2");
+	kunai->owner = self;
+	kunai->touch = Kunai_Touch;
+	kunai->nextthink = level.time + 8000 / speed;
+	kunai->think = G_FreeEdict;
+	kunai->dmg = damage;
+	kunai->s.sound = gi.soundindex("weapons/rockfly.wav");
+	kunai->classname = "kunai";
+
+	if (self->client)
+		check_dodge(self, kunai->s.origin, dir, speed);
+
+	gi.linkentity(kunai);
+}
+
+/*
+=================
+fire_bow
+=================
+*/
+static void Bow_Touch(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf)
+{
+	vec3_t		origin;
+	int			n;
+
+	if (other == ent->owner)
+		return;
+
+	if (surf && (surf->flags & SURF_SKY))
+	{
+		G_FreeEdict(ent);
+		return;
+	}
+
+	if (ent->owner->client)
+		PlayerNoise(ent->owner, ent->s.origin, PNOISE_IMPACT);
+
+	// calculate position for the explosion entity
+	VectorMA(ent->s.origin, -0.02, ent->velocity, origin);
+
+	if (other->takedamage)
+	{
+		T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, 0, MOD_BOW);
+	}
+
+	gi.WriteByte(svc_temp_entity);
+	if (ent->waterlevel)
+		gi.WriteByte(TE_TELEPORT_EFFECT);
+	else
+		gi.WriteByte(TE_TELEPORT_EFFECT);
+	gi.WritePosition(origin);
+	gi.multicast(ent->s.origin, MULTICAST_PHS);
+
+	G_FreeEdict(ent);
+}
+
+void fire_bow(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed)
+{
+	edict_t	*bow;
+
+	bow = G_Spawn();
+	VectorCopy(start, bow->s.origin);
+	VectorCopy(dir, bow->movedir);
+	vectoangles(dir, bow->s.angles);
+	VectorScale(dir, speed, bow->velocity);
+	bow->movetype = MOVETYPE_FLYMISSILE;
+	bow->clipmask = MASK_SHOT;
+	bow->solid = SOLID_BBOX;
+	bow->s.effects |= EF_ANIM_ALL;
+	VectorClear(bow->mins);
+	VectorClear(bow->maxs);
+	bow->s.modelindex = gi.modelindex("models/items/ammo/arrows/medium/tris.md2");
+	bow->owner = self;
+	bow->touch = Bow_Touch;
+	bow->nextthink = level.time + 8000 / speed;
+	bow->think = G_FreeEdict;
+	bow->dmg = damage;
+	bow->s.sound = gi.soundindex("weapons/rockfly.wav");
+	bow->classname = "bow";
+
+	if (self->client)
+		check_dodge(self, bow->s.origin, dir, speed);
+
+	gi.linkentity(bow);
 }
