@@ -646,7 +646,7 @@ void SpawnEntities (char *mapname, char *entities, char *spawnpoint)
 #endif
 
 char *single_statusbar = 
-"yb	-24 "
+"yb	-48 "//-24
 
 // health
 "xv	0 "
@@ -656,6 +656,7 @@ char *single_statusbar =
 
 // ammo
 "if 2 "
+"	yb -48"//null
 "	xv	100 "
 "	anum "
 "	xv	150 "
@@ -664,6 +665,7 @@ char *single_statusbar =
 
 // armor
 "if 4 "
+"	yb -48"//null
 "	xv	200 "
 "	rnum "
 "	xv	250 "
@@ -672,32 +674,35 @@ char *single_statusbar =
 
 // selected item
 "if 6 "
+"	yb -96"//null
 "	xv	296 "
 "	pic 6 "
 "endif "
 
-"yb	-50 "
+"yb	-94 "//-50
 
 // picked up item
 "if 7 "
 "	xv	0 "
 "	pic 7 "
 "	xv	26 "
-"	yb	-42 "
+"	yb	-84 "//-42
 "	stat_string 8 "
 "	yb	-50 "
 "endif "
 
 // timer
 "if 9 "
+"	yb -48"//null
 "	xv	262 "
 "	num	2	10 "
-"	xv	296 "
+"	xv	300 "//296
 "	pic	9 "
 "endif "
 
 //  help / weapon icon 
 "if 11 "
+"	yb -96"//null
 "	xv	148 "
 "	pic	11 "
 "endif "
@@ -845,10 +850,10 @@ void SP_worldspawn (edict_t *ent)
 
 
 	// help icon for statusbar
-	gi.imageindex ("i_help");
-	level.pic_health = gi.imageindex ("i_health");
-	gi.imageindex ("help");
-	gi.imageindex ("field_3");
+	gi.imageindex ("ihelp");
+	level.pic_health = gi.imageindex ("ihealth");
+	gi.imageindex ("help_m");
+	gi.imageindex ("field3");
 
 	if (!st.gravity)
 		gi.cvar_set("sv_gravity", "800");
@@ -858,7 +863,7 @@ void SP_worldspawn (edict_t *ent)
 	snd_fry = gi.soundindex ("player/fry.wav");	// standing in lava / slime
 
 	//PrecacheItem (FindItem ("Blaster"));
-	PrecacheItem(FindItem("Hands"));
+	PrecacheItem(FindItem("Katana"));
 
 	gi.soundindex ("player/lava1.wav");
 	gi.soundindex ("player/lava2.wav");
@@ -904,6 +909,8 @@ void SP_worldspawn (edict_t *ent)
 	gi.modelindex ("#w_hyperblaster.md2");
 	gi.modelindex ("#w_railgun.md2");
 	gi.modelindex ("#w_bfg.md2");
+	gi.modelindex("#w_grapple.md2");
+	gi.modelindex("#w_katana.md2");
 
 	//-------------------
 

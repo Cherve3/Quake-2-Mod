@@ -383,9 +383,21 @@ void ClientObituary (edict_t *self, edict_t *inflictor, edict_t *attacker)
 				message = "tried to invade";
 				message2 = "'s personal space";
 				break;
-			case MOD_PUNCH:
+			case MOD_GRAPPLE:
+				message = "was caught by";
+				message2 = "'s grapple";
+				break;
+			case MOD_KATANA:
 				message ="took";
-				message2 = "'s fist in the face";
+				message2 = "'s katana to the chest";
+				break;
+			case MOD_KUNAI:
+				message = "stabbed by";
+				message2 = "'s kunai";
+				break;
+			case MOD_BOW:
+				message = "sniped by";
+				message2 = "'s arrow";
 				break;
 			}
 			if (message)
@@ -425,7 +437,7 @@ void TossClientWeapon (edict_t *self)
 	if (! self->client->pers.inventory[self->client->ammo_index] )
 		item = NULL;
 //	if (item && (strcmp (item->pickup_name, "Blaster") == 0))
-	if (item && (strcmp(item->pickup_name, "Hands") == 0))
+	if (item && (strcmp(item->pickup_name, "Katana") == 0))
 		item = NULL;
 
 	if (!((int)(dmflags->value) & DF_QUAD_DROP))
@@ -545,6 +557,8 @@ void player_die (edict_t *self, edict_t *inflictor, edict_t *attacker, int damag
 		}
 	}
 
+	CTFPlayerResetGrapple(self);
+
 	// remove powerups
 	self->client->quad_framenum = 0;
 	self->client->invincible_framenum = 0;
@@ -616,11 +630,14 @@ void InitClientPersistant (gclient_t *client)
 	memset (&client->pers, 0, sizeof(client->pers));
 
 	//item = FindItem("Blaster");
-	item = FindItem("Hands");
+	item = FindItem("Katana");
 	client->pers.selected_item = ITEM_INDEX(item);
 	client->pers.inventory[client->pers.selected_item] = 1;
 
 	client->pers.weapon = item;
+
+	item = FindItem("Grapple");
+	client->pers.inventory[ITEM_INDEX(item)] = 1;
 
 	client->pers.health			= 100;
 	client->pers.max_health		= 100;
@@ -631,6 +648,8 @@ void InitClientPersistant (gclient_t *client)
 	client->pers.max_grenades	= 50;
 	client->pers.max_cells		= 200;
 	client->pers.max_slugs		= 50;
+	client->pers.max_kunai		= 50;
+	client->pers.max_arrows		= 50;
 
 	client->pers.connected = true;
 }
@@ -1657,8 +1676,12 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 
 		if (ent->groundentity && !pm.groundentity && (pm.cmd.upmove >= 10) && (pm.waterlevel == 0))
 		{
-			gi.sound(ent, CHAN_VOICE, gi.soundindex("*jump1.wav"), 1, ATTN_NORM, 0);
-			PlayerNoise(ent, ent->s.origin, PNOISE_SELF);
+			if (ent->groundentity && (pm.cmd.upmove >= 20) && (pm.waterlevel == 0)){
+				gi.cprintf(ent, PRINT_HIGH, "Double Jump foo!\n");
+				//ent->velocity[2] += 5;
+			}
+			//gi.sound(ent, CHAN_VOICE, gi.soundindex("*jump1.wav"), 1, ATTN_NORM, 0);
+			//PlayerNoise(ent, ent->s.origin, PNOISE_SELF);
 		}
 
 		ent->viewheight = pm.viewheight;
@@ -1679,6 +1702,9 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 			VectorCopy (pm.viewangles, client->v_angle);
 			VectorCopy (pm.viewangles, client->ps.viewangles);
 		}
+
+		if (client->ctf_grapple)
+			CTFGrapplePull(client->ctf_grapple);
 
 		gi.linkentity (ent);
 
@@ -1747,6 +1773,23 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 		if (other->inuse && other->client->chase_target == ent)
 			UpdateChaseCam(other);
 	}
+
+	//gi.cprintf(ent, PRINT_HIGH, "Button: %d\nOld Buttons : %d\n\n", client->buttons, client->oldbuttons);
+	gi.cprintf(ent, PRINT_HIGH, "Other ent: %d\n", other->targetname);
+	if (pm.cmd.sidemove && client->buttons){
+		PrintPmove(&pm);
+		gi.cprintf(ent, PRINT_HIGH, "Moving Sideways\nSideButton: %d\nSide Old Buttons: %d\n", client->buttons, client->oldbuttons);
+
+		//if (client->oldbuttons = )
+		
+	}
+
+	if (pm.s.pm_flags & PMF_DUCKED){
+		//PlayerNoise(ent,ent->move_origin, PNOISE_SELF);
+		gi.cprintf(ent, PRINT_HIGH, "Im ducking foo.");
+	}
+	
+	//gi.cprintf(ent, PRINT_HIGH, "%s%d\n", "Light Level: ", ent->light_level);
 }
 
 

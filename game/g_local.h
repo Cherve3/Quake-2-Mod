@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // because we define the full size ones in this file
 #define	GAME_INCLUDE
 #include "game.h"
+#include "g_ctf.h"
 
 // the "gameversion" client command will print this plus compile date
 #define	GAMEVERSION	"baseq2"
@@ -103,7 +104,9 @@ typedef enum
 	AMMO_ROCKETS,
 	AMMO_GRENADES,
 	AMMO_CELLS,
-	AMMO_SLUGS
+	AMMO_SLUGS,
+	AMMO_KUNAI,
+	AMMO_ARROWS
 } ammo_t;
 
 
@@ -230,6 +233,11 @@ typedef struct
 #define WEAP_HYPERBLASTER		9 
 #define WEAP_RAILGUN			10
 #define WEAP_BFG				11
+#define WEAP_GRAPPLE			12
+
+#define WEAP_KATANA				13
+#define WEAP_KUNAI				14
+#define WEAP_BOW				15
 
 typedef struct gitem_s
 {
@@ -498,9 +506,14 @@ extern	int	body_armor_index;
 #define MOD_TRIGGER_HURT	31
 #define MOD_HIT				32
 #define MOD_TARGET_BLASTER	33
+
+#define MOD_GRAPPLE			34
+#define MOD_KATANA			35
+#define MOD_KUNAI			36
+#define MOD_BOW				37
+
 #define MOD_FRIENDLY_FIRE	0x8000000
 
-#define MOD_PUNCH			34
 
 extern	int	meansOfDeath;
 
@@ -522,6 +535,9 @@ extern	cvar_t	*dmflags;
 extern	cvar_t	*skill;
 extern	cvar_t	*fraglimit;
 extern	cvar_t	*timelimit;
+
+extern	cvar_t	*instantweap;
+
 extern	cvar_t	*password;
 extern	cvar_t	*spectator_password;
 extern	cvar_t	*g_select_empty;
@@ -736,6 +752,10 @@ void fire_rocket (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed
 void fire_rail (edict_t *self, vec3_t start, vec3_t aimdir, int damage, int kick);
 void fire_bfg (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, float damage_radius);
 
+void fire_katana(edict_t *self, vec3_t start, vec3_t aim, int reach, int damage, int kick, int quiet, int mo);
+void fire_kunai(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed);
+void fire_bow(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed);
+
 //
 // g_ptrail.c
 //
@@ -853,6 +873,8 @@ typedef struct
 	int			max_grenades;
 	int			max_cells;
 	int			max_slugs;
+	int			max_kunai;
+	int			max_arrows;
 
 	gitem_t		*weapon;
 	gitem_t		*lastweapon;
@@ -958,6 +980,11 @@ struct gclient_s
 	int			flood_whenhead;		// head pointer for when said
 
 	float		respawn_time;		// can respawn when time > this
+
+	void		*ctf_grapple;		// entity of grapple
+	int			ctf_grapplestate;		// true if pulling
+	float		ctf_grapplereleasetime;	// time of grapple release
+	float		ctf_techsndtime;
 
 	edict_t		*chase_target;		// player we are chasing
 	qboolean	update_chase;		// need to update chase info?
