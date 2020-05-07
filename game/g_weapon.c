@@ -995,6 +995,7 @@ static void Kunai_Touch(edict_t *ent, edict_t *other, cplane_t *plane, csurface_
 		gi.WriteByte(TE_TELEPORT_EFFECT);
 	else
 		gi.WriteByte(TE_TELEPORT_EFFECT);
+
 	gi.WritePosition(origin);
 	gi.multicast(ent->s.origin, MULTICAST_PHS);
 
@@ -1024,6 +1025,7 @@ void fire_kunai(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed)
 	kunai->dmg = damage;
 	kunai->s.sound = gi.soundindex("weapons/rockfly.wav");
 	kunai->classname = "kunai";
+
 
 	if (self->client)
 		check_dodge(self, kunai->s.origin, dir, speed);
@@ -1101,3 +1103,4 @@ void fire_bow(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed)
 
 	gi.linkentity(bow);
 }
+
