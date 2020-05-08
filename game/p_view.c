@@ -871,8 +871,10 @@ void G_SetClientFrame (edict_t *ent)
 		duck = true;
 	else
 		duck = false;
-	if (xyspeed)
+	if (xyspeed){
 		run = true;
+	}
+
 	else
 		run = false;
 

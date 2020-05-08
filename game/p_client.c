@@ -399,6 +399,10 @@ void ClientObituary (edict_t *self, edict_t *inflictor, edict_t *attacker)
 				message = "sniped by";
 				message2 = "'s arrow";
 				break;
+			case MOD_ROCK:
+				message = "caught";
+				message2 = "'s rock to the head";
+				break;
 			}
 			if (message)
 			{
@@ -650,6 +654,7 @@ void InitClientPersistant (gclient_t *client)
 	client->pers.max_slugs		= 50;
 	client->pers.max_kunai		= 50;
 	client->pers.max_arrows		= 50;
+	client->pers.max_rocks		= 15;
 
 	client->pers.connected = true;
 }
@@ -1676,12 +1681,10 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 
 		if (ent->groundentity && !pm.groundentity && (pm.cmd.upmove >= 10) && (pm.waterlevel == 0))
 		{
-			if (ent->groundentity && (pm.cmd.upmove >= 20) && (pm.waterlevel == 0)){
-				gi.cprintf(ent, PRINT_HIGH, "Double Jump foo!\n");
-				//ent->velocity[2] += 5;
+			if (ent->groundentity && ent->viewheight > 22 && (pm.waterlevel == 0)){
+				gi.cprintf(ent, PRINT_HIGH, "Double Jump\n PM upmove: %d\n Velocity 2: %d", pm.cmd.upmove, ent->velocity[2]);
+				ent->movedir[2] *= 2;
 			}
-			//gi.sound(ent, CHAN_VOICE, gi.soundindex("*jump1.wav"), 1, ATTN_NORM, 0);
-			//PlayerNoise(ent, ent->s.origin, PNOISE_SELF);
 		}
 
 		ent->viewheight = pm.viewheight;
@@ -1774,22 +1777,34 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 			UpdateChaseCam(other);
 	}
 
-	//gi.cprintf(ent, PRINT_HIGH, "Button: %d\nOld Buttons : %d\n\n", client->buttons, client->oldbuttons);
-	gi.cprintf(ent, PRINT_HIGH, "Other ent: %d\n", other->targetname);
-	if (pm.cmd.sidemove && client->buttons){
-		PrintPmove(&pm);
-		gi.cprintf(ent, PRINT_HIGH, "Moving Sideways\nSideButton: %d\nSide Old Buttons: %d\n", client->buttons, client->oldbuttons);
-
-		//if (client->oldbuttons = )
+	//Sideways Dash Movement 
+	if ( pm.cmd.sidemove > 200 && (pm.s.pm_flags & PMF_DUCKED)){
+		//ent->velocity[0] = (float)((int)(ent->velocity[0] * 1));
+		ent->velocity[1] = (float)((int)(ent->velocity[1] * 1.5));
+		//ent->velocity[2] = (float)((int)(ent->velocity[2] * 1));
 		
 	}
-
-	if (pm.s.pm_flags & PMF_DUCKED){
-		//PlayerNoise(ent,ent->move_origin, PNOISE_SELF);
-		gi.cprintf(ent, PRINT_HIGH, "Im ducking foo.");
+	else if ( pm.cmd.sidemove < -200 && (pm.s.pm_flags & PMF_DUCKED) ){
+		ent->velocity[1] = -(float)((int)(ent->velocity[1] * 1.5));
 	}
-	
-	//gi.cprintf(ent, PRINT_HIGH, "%s%d\n", "Light Level: ", ent->light_level);
+
+	//Decrease light level while crouched
+	if (pm.s.pm_flags & PMF_DUCKED){
+		ent->light_level = ent->light_level - 30;
+	}
+
+	//Forward Slide Movement
+	if ( (pm.cmd.forwardmove > 200) && (pm.s.pm_flags & PMF_DUCKED) ){
+		gi.cprintf(ent, PRINT_HIGH, "SLIDING\n");
+		ent->velocity[0] = (float)((int)(ent->velocity[0] * 1.5));
+	}
+/*	else if ((pm.cmd.forwardmove > 200) && (pm.s.pm_flags & PMF_DUCKED)){
+		ent->velocity[0] = -(float)((int)(ent->velocity[0] * 1.5));
+	}
+*/
+
+	gi.cprintf(ent, PRINT_HIGH, "%s%d\n", "UPMove: ", pm.cmd.upmove);
+	gi.cprintf(ent, PRINT_HIGH, "%s%d\n", "Light Level: ", ent->light_level);
 }
 
 

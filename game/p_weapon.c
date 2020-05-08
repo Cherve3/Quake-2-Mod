@@ -28,20 +28,9 @@ static byte		is_silenced;
 
 
 void weapon_grenade_fire (edict_t *ent, qboolean held);
+void weapon_rock_fire(edict_t *ent, qboolean held);
+void weapon_sbomb_fire(edict_t *ent, qboolean held);
 
-/*
-static void P_ProjectSource (gclient_t *client, vec3_t point, vec3_t distance, vec3_t forward, vec3_t right, vec3_t result)
-{
-	vec3_t	_distance;
-
-	VectorCopy (distance, _distance);
-	if (client->pers.hand == LEFT_HANDED)
-		_distance[1] *= -1;
-	else if (client->pers.hand == CENTER_HANDED)
-		_distance[1] = 0;
-	G_ProjectSource (point, _distance, forward, right, result);
-}
-*/
 void P_ProjectSource(gclient_t *client, vec3_t point, vec3_t distance, vec3_t forward, vec3_t right, vec3_t result)
 {
 	vec3_t	_distance;
@@ -192,7 +181,15 @@ void ChangeWeapon (edict_t *ent)
 		weapon_grenade_fire (ent, false);
 		ent->client->grenade_time = 0;
 	}
-
+	
+	if (ent->client->rock_time)
+	{
+		ent->client->rock_time = level.time;
+		ent->client->weapon_sound = 0;
+		weapon_rock_fire(ent, false);
+		ent->client->rock_time = 0;
+	}
+	
 	ent->client->pers.lastweapon = ent->client->pers.weapon;
 	ent->client->pers.weapon = ent->client->newweapon;
 	ent->client->newweapon = NULL;
@@ -1895,7 +1892,7 @@ void Weapon_Kunai_Fire(edict_t *ent)
 
 	ent->client->ps.gunframe++;
 
-	PlayerNoise(ent, start, PNOISE_WEAPON);
+	//PlayerNoise(ent, start, PNOISE_WEAPON);
 
 	if (!((int)dmflags->value & DF_INFINITE_AMMO))
 		ent->client->pers.inventory[ent->client->ammo_index]--;
@@ -1960,4 +1957,301 @@ void Weapon_Bow(edict_t *ent)
 	Weapon_Generic(ent, 4, 12, 50, 54, pause_frames, fire_frames, Weapon_Bow_Fire);
 }
 
+/*
+======================================================================
+
+ROCK
+
+======================================================================
+*/
+
+#define ROCK_TIMER		3.0
+#define ROCK_MINSPEED	400
+#define ROCK_MAXSPEED	800
+
+void weapon_rock_fire(edict_t *ent, qboolean held)
+{
+	vec3_t	offset;
+	vec3_t	forward, right;
+	vec3_t	start;
+	int		damage = 1;
+	float	timer;
+	int		speed;
+
+
+	VectorSet(offset, 8, 8, ent->viewheight - 8);
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+	P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
+
+	timer = ent->client->rock_time - level.time;
+
+	if (timer < 0){
+		speed = ROCK_MAXSPEED;
+	}
+	else{
+		speed = ROCK_MINSPEED + (ROCK_TIMER - timer) * ((ROCK_MAXSPEED - ROCK_MINSPEED) / ROCK_TIMER);
+	}
+	
+	fire_rock(ent, start, forward, damage, speed, timer, held);
+
+	if (!((int)dmflags->value & DF_INFINITE_AMMO))
+		ent->client->pers.inventory[ent->client->ammo_index]--;
+
+	ent->client->rock_time = level.time + 1.0;
+
+	if (ent->deadflag || ent->s.modelindex != 255) // VWep animations screw up corpses
+	{
+		return;
+	}
+
+	if (ent->health <= 0)
+		return;
+
+	if (ent->client->ps.pmove.pm_flags & PMF_DUCKED)
+	{
+		ent->client->anim_priority = ANIM_ATTACK;
+		ent->s.frame = FRAME_crattak1 - 1;
+		ent->client->anim_end = FRAME_crattak3;
+	}
+	else
+	{
+		ent->client->anim_priority = ANIM_REVERSE;
+		ent->s.frame = FRAME_wave08;
+		ent->client->anim_end = FRAME_wave01;
+	}
+}
+
+void Weapon_Rock(edict_t *ent)
+{
+	if ((ent->client->newweapon) && (ent->client->weaponstate == WEAPON_READY))
+	{
+		ChangeWeapon(ent);
+		return;
+	}
+
+	if (ent->client->weaponstate == WEAPON_ACTIVATING)
+	{
+		ent->client->weaponstate = WEAPON_READY;
+		ent->client->ps.gunframe = 16;
+		return;
+	}
+
+	if (ent->client->weaponstate == WEAPON_READY)
+	{
+		if (((ent->client->latched_buttons | ent->client->buttons) & BUTTON_ATTACK))
+		{
+			ent->client->latched_buttons &= ~BUTTON_ATTACK;
+			if (ent->client->pers.inventory[ent->client->ammo_index])
+			{
+				ent->client->ps.gunframe = 1;
+				ent->client->weaponstate = WEAPON_FIRING;
+				ent->client->rock_time = 0;
+			}
+			else
+			{
+				if (level.time >= ent->pain_debounce_time)
+				{
+					gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+					ent->pain_debounce_time = level.time + 1;
+				}
+				NoAmmoWeaponChange(ent);
+			}
+			return;
+		}
+
+		if ((ent->client->ps.gunframe == 29) || (ent->client->ps.gunframe == 34) || (ent->client->ps.gunframe == 39) || (ent->client->ps.gunframe == 48))
+		{
+			if (rand() & 15)
+				return;
+		}
+
+		if (++ent->client->ps.gunframe > 48)
+			ent->client->ps.gunframe = 16;
+		return;
+	}
+
+	if (ent->client->weaponstate == WEAPON_FIRING)
+	{
+		if (ent->client->ps.gunframe == 5)
+			gi.sound(ent, CHAN_WEAPON, gi.soundindex("weapons/hgrena1b.wav"), 1, ATTN_NORM, 0);
+
+		if (ent->client->ps.gunframe == 11)
+		{
+			if (!ent->client->rock_time)
+			{
+				ent->client->rock_time = level.time + ROCK_TIMER + 0.2;
+				//ent->client->weapon_sound = gi.soundindex("weapons/hgrenc1b.wav");
+			}
+
+			if (ent->client->buttons & BUTTON_ATTACK)
+				return;
+		}
+	}
+
+	if (ent->client->ps.gunframe == 12)
+	{
+		ent->client->weapon_sound = 0;
+		weapon_rock_fire(ent, false);
+	}
+
+	if ((ent->client->ps.gunframe == 15) && (level.time < ent->client->rock_time))
+		return;
+
+	ent->client->ps.gunframe++;
+	
+	if (ent->client->ps.gunframe == 16)
+	{
+		ent->client->rock_time = 0;
+		ent->client->weaponstate = WEAPON_READY;
+	}
+}
+
+/*
+======================================================================
+
+SBOMB
+
+======================================================================
+*/
+
+#define SBOMB_TIMER		3.0
+#define SBOMB_MINSPEED	400
+#define SBOMB_MAXSPEED	800
+
+void weapon_sbomb_fire(edict_t *ent, qboolean held)
+{
+	vec3_t	offset;
+	vec3_t	forward, right;
+	vec3_t	start;
+	int		damage = 2;
+	float	timer;
+	int		speed;
+
+
+	VectorSet(offset, 8, 8, ent->viewheight - 8);
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+	P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
+
+	timer = ent->client->sbomb_time - level.time;
+
+	if (timer < 0){
+		speed = SBOMB_MAXSPEED;
+	}
+	else{
+		speed = SBOMB_MINSPEED + (SBOMB_TIMER - timer) * ((SBOMB_MAXSPEED - SBOMB_MINSPEED) / SBOMB_TIMER);
+	}
+
+	fire_sbomb(ent, start, forward, damage, speed, timer, held);
+
+	if (!((int)dmflags->value & DF_INFINITE_AMMO))
+		ent->client->pers.inventory[ent->client->ammo_index]--;
+
+	ent->client->sbomb_time = level.time + 1.0;
+
+	if (ent->deadflag || ent->s.modelindex != 255) // VWep animations screw up corpses
+	{
+		return;
+	}
+
+	if (ent->health <= 0)
+		return;
+
+	if (ent->client->ps.pmove.pm_flags & PMF_DUCKED)
+	{
+		ent->client->anim_priority = ANIM_ATTACK;
+		ent->s.frame = FRAME_crattak1 - 1;
+		ent->client->anim_end = FRAME_crattak3;
+	}
+	else
+	{
+		ent->client->anim_priority = ANIM_REVERSE;
+		ent->s.frame = FRAME_wave08;
+		ent->client->anim_end = FRAME_wave01;
+	}
+}
+
+void Weapon_Sbomb(edict_t *ent)
+{
+	if ((ent->client->newweapon) && (ent->client->weaponstate == WEAPON_READY))
+	{
+		ChangeWeapon(ent);
+		return;
+	}
+
+	if (ent->client->weaponstate == WEAPON_ACTIVATING)
+	{
+		ent->client->weaponstate = WEAPON_READY;
+		ent->client->ps.gunframe = 16;
+		return;
+	}
+
+	if (ent->client->weaponstate == WEAPON_READY)
+	{
+		if (((ent->client->latched_buttons | ent->client->buttons) & BUTTON_ATTACK))
+		{
+			ent->client->latched_buttons &= ~BUTTON_ATTACK;
+			if (ent->client->pers.inventory[ent->client->ammo_index])
+			{
+				ent->client->ps.gunframe = 1;
+				ent->client->weaponstate = WEAPON_FIRING;
+				ent->client->sbomb_time = 0;
+			}
+			else
+			{
+				if (level.time >= ent->pain_debounce_time)
+				{
+					gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+					ent->pain_debounce_time = level.time + 1;
+				}
+				NoAmmoWeaponChange(ent);
+			}
+			return;
+		}
+
+		if ((ent->client->ps.gunframe == 29) || (ent->client->ps.gunframe == 34) || (ent->client->ps.gunframe == 39) || (ent->client->ps.gunframe == 48))
+		{
+			if (rand() & 15)
+				return;
+		}
+
+		if (++ent->client->ps.gunframe > 48)
+			ent->client->ps.gunframe = 16;
+		return;
+	}
+
+	if (ent->client->weaponstate == WEAPON_FIRING)
+	{
+		if (ent->client->ps.gunframe == 5)
+			gi.sound(ent, CHAN_WEAPON, gi.soundindex("weapons/hgrena1b.wav"), 1, ATTN_NORM, 0);
+
+		if (ent->client->ps.gunframe == 11)
+		{
+			if (!ent->client->sbomb_time)
+			{
+				ent->client->sbomb_time = level.time + SBOMB_TIMER + 0.2;
+				ent->client->weapon_sound = gi.soundindex("weapons/hgrenc1b.wav");
+			}
+
+			if (ent->client->buttons & BUTTON_ATTACK)
+				return;
+		}
+	}
+
+	if (ent->client->ps.gunframe == 12)
+	{
+		ent->client->weapon_sound = 0;
+		weapon_sbomb_fire(ent, false);
+	}
+
+	if ((ent->client->ps.gunframe == 15) && (level.time < ent->client->sbomb_time))
+		return;
+
+	ent->client->ps.gunframe++;
+
+	if (ent->client->ps.gunframe == 16)
+	{
+		ent->client->sbomb_time = 0;
+		ent->client->weaponstate = WEAPON_READY;
+	}
+}
 //======================================================================

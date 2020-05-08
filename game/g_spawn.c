@@ -911,6 +911,9 @@ void SP_worldspawn (edict_t *ent)
 	gi.modelindex ("#w_bfg.md2");
 	gi.modelindex("#w_grapple.md2");
 	gi.modelindex("#w_katana.md2");
+	gi.modelindex("w_kunai.md2");
+	gi.modelindex("w_bow.md2");
+	gi.modelindex("w_rock.md2");
 
 	//-------------------
 

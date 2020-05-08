@@ -39,6 +39,8 @@ void Weapon_BFG (edict_t *ent);
 void Weapon_Katana (edict_t *ent);
 void Weapon_Kunai(edict_t *ent);
 void Weapon_Bow(edict_t *ent);
+void Weapon_Rock(edict_t *ent);
+void Weapon_Sbomb(edict_t *ent);
 
 gitem_armor_t jacketarmor_info	= { 25,  50, .30, .00, ARMOR_JACKET};
 gitem_armor_t combatarmor_info	= { 50, 100, .60, .30, ARMOR_COMBAT};
@@ -287,7 +289,6 @@ qboolean Pickup_Pack (edict_t *ent, edict_t *other)
 	if (other->client->pers.max_arrows < 75)
 		other->client->pers.max_arrows = 75;
 
-
 	item = FindItem("Bullets");
 	if (item)
 	{
@@ -498,6 +499,10 @@ qboolean Add_Ammo (edict_t *ent, gitem_t *item, int count)
 		max = ent->client->pers.max_kunai;
 	else if (item->tag == AMMO_ARROWS)
 		max = ent->client->pers.max_arrows;
+	else if (item->tag == AMMO_ROCKS)
+		max = ent->client->pers.max_rocks;
+	else if (item->tag == AMMO_SBOMB)
+		max = ent->client->pers.max_sbomb;
 	else
 		return false;
 
@@ -562,6 +567,24 @@ void Drop_Ammo (edict_t *ent, gitem_t *item)
 		item->tag == AMMO_GRENADES &&
 		ent->client->pers.inventory[index] - dropped->count <= 0) {
 		gi.cprintf (ent, PRINT_HIGH, "Can't drop current weapon\n");
+		G_FreeEdict(dropped);
+		return;
+	}
+
+	if (ent->client->pers.weapon &&
+		ent->client->pers.weapon->tag == AMMO_ROCKS &&
+		item->tag == AMMO_ROCKS &&
+		ent->client->pers.inventory[index] - dropped->count <= 0) {
+		gi.cprintf(ent, PRINT_HIGH, "Can't drop current weapon\n");
+		G_FreeEdict(dropped);
+		return;
+	}
+
+	if (ent->client->pers.weapon &&
+		ent->client->pers.weapon->tag == AMMO_SBOMB &&
+		item->tag == AMMO_SBOMB &&
+		ent->client->pers.inventory[index] - dropped->count <= 0) {
+		gi.cprintf(ent, PRINT_HIGH, "Can't drop current weapon\n");
 		G_FreeEdict(dropped);
 		return;
 	}
@@ -1471,16 +1494,16 @@ always owned, never in the world
 		"misc/am_pkup.wav",
 		"models/items/ammo/grenades/medium/tris.md2", 0,
 		"models/weapons/v_handgr/tris.md2",
-/* icon */		"a_grenades",
-/* pickup */	"Grenades",
-/* width */		3,
+		"a_grenades",
+		"Grenades",
+		3,
 		5,
 		"grenades",
 		IT_AMMO|IT_WEAPON,
 		WEAP_GRENADES,
 		NULL,
 		AMMO_GRENADES,
-/* precache */ "weapons/hgrent1a.wav weapons/hgrena1b.wav weapons/hgrenc1b.wav weapons/hgrenb1a.wav weapons/hgrenb2a.wav "
+		"weapons/hgrent1a.wav weapons/hgrena1b.wav weapons/hgrenc1b.wav weapons/hgrenb1a.wav weapons/hgrenb2a.wav "
 	},
 
 /*QUAKED weapon_grenadelauncher (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1605,7 +1628,7 @@ always owned, never in the world
 		NULL,                    // the drop function
 		Weapon_Katana,             //What the use functon is
 		"misc/w_pkup.wav",
-		"models/weapons/g_katana/tris.md2", 0,
+		NULL, 0,
 		"models/weapons/v_katana/tris.md2", //The models stuff.(This is my Hands model)
 		"w_katana",             //Icon to be used. you could create another, you probably should
 		"Katana",             //Pickup name. use this to give the item to someone at the start of the game
@@ -1657,6 +1680,52 @@ always owned, never in the world
 		NULL,
 		0,
 		""
+	},
+
+	/*QUAKED ammo_rocks (.3 .3 1) (-16 -16 -16) (16 16 16)
+	*/
+	{
+		"ammo_rock",
+		Pickup_Ammo,
+		Use_Weapon,
+		Drop_Ammo,
+		Weapon_Rock,
+		"misc/am_pkup.wav",
+		"models/objects/rock/tris.md2", 0,
+		"models/weapons/v_handgr/tris.md2",
+		"a_rock",
+		"Rock",
+		3,
+		5,
+		"rock",
+		IT_AMMO | IT_WEAPON,
+		WEAP_ROCK,
+		NULL,
+		AMMO_ROCKS,
+		"weapons/hgrent1a.wav weapons/hgrena1b.wav weapons/hgrenc1b.wav weapons/hgrenb1a.wav weapons/hgrenb2a.wav "
+	},
+
+	/*QUAKED ammo_sbomb (.3 .3 1) (-16 -16 -16) (16 16 16)
+	*/
+	{
+		"ammo_sbomb",
+		Pickup_Ammo,
+		Use_Weapon,
+		Drop_Ammo,
+		Weapon_Sbomb,
+		"misc/am_pkup.wav",
+		"models/objects/sbomb/tris.md2", 0,
+		"models/weapons/v_handgr/tris.md2",
+		"a_sbomb",
+		"Sbomb",
+		3,
+		5,
+		"sbomb",
+		IT_AMMO | IT_WEAPON,
+		WEAP_SBOMB,
+		NULL,
+		AMMO_SBOMB,
+		"weapons/hgrent1a.wav weapons/hgrena1b.wav weapons/hgrenc1b.wav weapons/hgrenb1a.wav weapons/hgrenb2a.wav "
 	},
 	//
 	// AMMO ITEMS
