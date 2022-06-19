@@ -30,6 +30,9 @@ static byte		is_silenced;
 void weapon_grenade_fire (edict_t *ent, qboolean held);
 void weapon_rock_fire(edict_t *ent, qboolean held);
 void weapon_sbomb_fire(edict_t *ent, qboolean held);
+void Weapon_Kunai_Fire(edict_t *ent);
+void Weapon_Bow_Fire(edict_t *ent);
+
 
 void P_ProjectSource(gclient_t *client, vec3_t point, vec3_t distance, vec3_t forward, vec3_t right, vec3_t result)
 {
@@ -181,7 +184,7 @@ void ChangeWeapon (edict_t *ent)
 		weapon_grenade_fire (ent, false);
 		ent->client->grenade_time = 0;
 	}
-	
+
 	if (ent->client->rock_time)
 	{
 		ent->client->rock_time = level.time;
@@ -189,7 +192,23 @@ void ChangeWeapon (edict_t *ent)
 		weapon_rock_fire(ent, false);
 		ent->client->rock_time = 0;
 	}
-	
+
+	if (ent->client->kunai_time)
+	{
+		ent->client->kunai_time = level.time;
+		ent->client->weapon_sound = 0;
+		Weapon_Kunai_Fire(ent);
+		ent->client->kunai_time = 0;
+	}
+
+	if (ent->client->bow_time)
+	{
+		ent->client->bow_time = level.time;
+		ent->client->weapon_sound = 0;
+		Weapon_Bow_Fire(ent);
+		ent->client->bow_time = 0;
+	}
+
 	ent->client->pers.lastweapon = ent->client->pers.weapon;
 	ent->client->pers.weapon = ent->client->newweapon;
 	ent->client->newweapon = NULL;
@@ -2255,3 +2274,4 @@ void Weapon_Sbomb(edict_t *ent)
 	}
 }
 //======================================================================
+

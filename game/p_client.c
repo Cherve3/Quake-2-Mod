@@ -403,6 +403,12 @@ void ClientObituary (edict_t *self, edict_t *inflictor, edict_t *attacker)
 				message = "caught";
 				message2 = "'s rock to the head";
 				break;
+			case MOD_KUNAI:
+				message = "stabbed by";
+				message2 = "'s kunai";
+			case MOD_BOW:
+				message = "sniped by";
+				message2 = "'s arrow";
 			}
 			if (message)
 			{
@@ -654,6 +660,7 @@ void InitClientPersistant (gclient_t *client)
 	client->pers.max_slugs		= 50;
 	client->pers.max_kunai		= 50;
 	client->pers.max_arrows		= 50;
+
 	client->pers.max_rocks		= 15;
 
 	client->pers.connected = true;
@@ -1802,9 +1809,9 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 		ent->velocity[0] = -(float)((int)(ent->velocity[0] * 1.5));
 	}
 */
-
 	gi.cprintf(ent, PRINT_HIGH, "%s%d\n", "UPMove: ", pm.cmd.upmove);
 	gi.cprintf(ent, PRINT_HIGH, "%s%d\n", "Light Level: ", ent->light_level);
+	//gi.cprintf(ent,PRINT_HIGH, "%s", "Light Level: "+ ent->light_level);
 }
 
 

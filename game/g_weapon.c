@@ -960,7 +960,6 @@ void fire_katana(edict_t *self, vec3_t start, vec3_t aim, int reach, int damage,
 	}
 }
 
-
 /*
 =================
 fire_kunai
@@ -989,6 +988,7 @@ static void Kunai_Touch(edict_t *ent, edict_t *other, cplane_t *plane, csurface_
 	if (other->takedamage)
 	{
 		T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, DAMAGE_BULLET, MOD_KUNAI);
+		//T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, 0, MOD_KUNAI);
 	}
 
 	gi.WriteByte(svc_temp_entity);
@@ -996,6 +996,7 @@ static void Kunai_Touch(edict_t *ent, edict_t *other, cplane_t *plane, csurface_
 		gi.WriteByte(TE_TELEPORT_EFFECT);
 	else
 		gi.WriteByte(TE_TELEPORT_EFFECT);
+
 	gi.WritePosition(origin);
 	gi.multicast(ent->s.origin, MULTICAST_PHS);
 
@@ -1023,8 +1024,12 @@ void fire_kunai(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed)
 	kunai->nextthink = level.time + 8000 / speed;
 	kunai->think = G_FreeEdict;
 	kunai->dmg = damage;
+
 	kunai->s.sound = gi.soundindex("weapons/hgrent1a.wav");
 	kunai->classname = "Kunai";
+	//kunai->s.sound = gi.soundindex("weapons/rockfly.wav");
+	//kunai->classname = "kunai";
+
 
 	if (self->client)
 		check_dodge(self, kunai->s.origin, dir, speed);
@@ -1060,6 +1065,7 @@ static void Bow_Touch(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t 
 	if (other->takedamage)
 	{
 		T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, DAMAGE_BULLET, MOD_BOW);
+		//T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, 0, MOD_BOW);
 	}
 
 	gi.WriteByte(svc_temp_entity);
@@ -1095,6 +1101,8 @@ void fire_bow(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed)
 	bow->think = G_FreeEdict;
 	bow->dmg = damage;
 	bow->s.sound = gi.soundindex("weapons/machgf4b.wav");
+	//bow->s.sound = gi.soundindex("weapons/rockfly.wav");
+
 	bow->classname = "bow";
 
 	if (self->client)

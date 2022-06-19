@@ -39,8 +39,10 @@ void Weapon_BFG (edict_t *ent);
 void Weapon_Katana (edict_t *ent);
 void Weapon_Kunai(edict_t *ent);
 void Weapon_Bow(edict_t *ent);
+
 void Weapon_Rock(edict_t *ent);
 void Weapon_Sbomb(edict_t *ent);
+
 
 gitem_armor_t jacketarmor_info	= { 25,  50, .30, .00, ARMOR_JACKET};
 gitem_armor_t combatarmor_info	= { 50, 100, .60, .30, ARMOR_COMBAT};
@@ -261,6 +263,24 @@ qboolean Pickup_Bandolier (edict_t *ent, edict_t *other)
 			other->client->pers.inventory[index] = other->client->pers.max_shells;
 	}
 
+	item = FindItem("Kunai");
+	if (item)
+	{
+		index = ITEM_INDEX(item);
+		other->client->pers.inventory[index] += item->quantity;
+		if (other->client->pers.inventory[index] > other->client->pers.max_kunai)
+			other->client->pers.inventory[index] = other->client->pers.max_kunai;
+	}
+
+	item = FindItem("Arrows");
+	if (item)
+	{
+		index = ITEM_INDEX(item);
+		other->client->pers.inventory[index] += item->quantity;
+		if (other->client->pers.inventory[index] > other->client->pers.max_arrows)
+			other->client->pers.inventory[index] = other->client->pers.max_arrows;
+	}
+
 	if (!(ent->spawnflags & DROPPED_ITEM) && (deathmatch->value))
 		SetRespawn (ent, ent->item->quantity);
 
@@ -284,10 +304,12 @@ qboolean Pickup_Pack (edict_t *ent, edict_t *other)
 		other->client->pers.max_cells = 300;
 	if (other->client->pers.max_slugs < 100)
 		other->client->pers.max_slugs = 100;
+  
 	if (other->client->pers.max_kunai < 75)
 		other->client->pers.max_kunai = 75;
 	if (other->client->pers.max_arrows < 75)
 		other->client->pers.max_arrows = 75;
+
 
 	item = FindItem("Bullets");
 	if (item)
@@ -350,6 +372,24 @@ qboolean Pickup_Pack (edict_t *ent, edict_t *other)
 		if (other->client->pers.inventory[index] > other->client->pers.max_kunai)
 			other->client->pers.inventory[index] = other->client->pers.max_kunai;
 	}
+	item = FindItem("Arrows");
+	if (item)
+	{
+		index = ITEM_INDEX(item);
+		other->client->pers.inventory[index] += item->quantity;
+		if (other->client->pers.inventory[index] > other->client->pers.max_arrows)
+			other->client->pers.inventory[index] = other->client->pers.max_arrows;
+	}
+
+	item = FindItem("Kunai");
+	if (item)
+	{
+		index = ITEM_INDEX(item);
+		other->client->pers.inventory[index] += item->quantity;
+		if (other->client->pers.inventory[index] > other->client->pers.max_kunai)
+			other->client->pers.inventory[index] = other->client->pers.max_kunai;
+	}
+
 	item = FindItem("Arrows");
 	if (item)
 	{
@@ -499,6 +539,7 @@ qboolean Add_Ammo (edict_t *ent, gitem_t *item, int count)
 		max = ent->client->pers.max_kunai;
 	else if (item->tag == AMMO_ARROWS)
 		max = ent->client->pers.max_arrows;
+
 	else if (item->tag == AMMO_ROCKS)
 		max = ent->client->pers.max_rocks;
 	else if (item->tag == AMMO_SBOMB)
@@ -1338,6 +1379,7 @@ gitem_t	itemlist[] =
 /* precache */ "misc/power2.wav misc/power1.wav"
 	},
 
+
 	/* weapon_grapple (.3 .3 1) (-16 -16 -16) (16 16 16)
 	always owned, never in the world
 	*/
@@ -1357,6 +1399,31 @@ gitem_t	itemlist[] =
 		NULL,
 		IT_WEAPON,
 		WEAP_GRAPPLE,
+
+	//
+	// WEAPONS 
+	//
+
+/* weapon_blaster (.3 .3 1) (-16 -16 -16) (16 16 16)
+always owned, never in the world
+**Changed to Katana**
+*/
+	{
+		"weapon_katana",									//  The map entity name. dont include this in a map whatever you do.
+		Pickup_Weapon,									// The pickup function
+		Use_Weapon,										// How to use
+		Drop_Weapon,									//Drop function
+		Weapon_Katana,									//Use function
+		"misc/w_pkup.wav",								//pickup sound
+		"models/weapons/g_katana/tris.md2", EF_ROTATE,	//world model
+		"models/weapons/v_katana/tris.md2",				//view model
+		"w_katana",										//Icon
+		"Katana",										//Pickup name
+		0,												//width of digits before icon
+		0,
+		NULL,											// ammo type
+		IT_WEAPON|IT_STAY_COOP,
+		WEAP_KATANA,									// the model index, defined in g_local.h
 		NULL,
 		0,
 		/* precache */ "weapons/grapple/grfire.wav weapons/grapple/grpull.wav weapons/grapple/grhang.wav weapons/grapple/grreset.wav weapons/grapple/grhit.wav"
@@ -1371,6 +1438,46 @@ gitem_t	itemlist[] =
 always owned, never in the world
 */
 	{
+		"ammo_kunai",									//  The map entity name. dont include this in a map whatever you do.
+		Pickup_Ammo,									// The pickup function
+		Use_Weapon,										// How to use
+		Drop_Ammo,									//Drop function
+		Weapon_Kunai,									//Use function
+		"misc/w_pkup.wav",								//pickup sound
+		"models/items/ammo/kunai/tris.md2", EF_ROTATE,	//world model
+		"models/weapons/v_kunai/tris.md2",				//view model
+		"a_kunai",										//Icon
+		"Kunai",										//Pickup name
+		3,												//width of digits before icon
+		5,
+		"Kunai",										// ammo type
+		IT_AMMO | IT_WEAPON,
+		WEAP_KUNAI,									// the model index, defined in g_local.h
+		NULL,
+		AMMO_KUNAI,
+		"models/objects/kunai/tris.md2"
+	},
+	{
+		"weapon_bow",									//  The map entity name. dont include this in a map whatever you do.
+		Pickup_Weapon,									// The pickup function
+		Use_Weapon,										// How to use
+		Drop_Weapon,									//Drop function
+		Weapon_Bow,									//Use function
+		"misc/w_pkup.wav",								//pickup sound
+		"models/weapons/g_bow/tris.md2", EF_ROTATE,	//world model
+		"models/weapons/v_bow/tris.md2",				//view model
+		"w_bow",										//Icon
+		"Bow",										//Pickup name
+		0,												//width of digits before icon
+		1,
+		"Arrows",										// ammo type
+		IT_WEAPON | IT_STAY_COOP,
+		WEAP_KUNAI,									// the model index, defined in g_local.h
+		NULL,
+		0,
+		"models/objects/bow/tris.md2"
+	},
+/*	{
 		"weapon_blaster", 
 		NULL,
 		Use_Weapon,
@@ -1379,8 +1486,8 @@ always owned, never in the world
 		"misc/w_pkup.wav",
 		NULL, 0,
 		"models/weapons/v_blast/tris.md2",
-/* icon */		"w_blaster",
-/* pickup */	"Blaster",
+/* icon 		"w_blaster",
+/* pickup 	"Blaster",
 		0,
 		0,
 		NULL,
@@ -1388,11 +1495,11 @@ always owned, never in the world
 		WEAP_BLASTER,
 		NULL,
 		0,
-/* precache */ "weapons/blastf1a.wav misc/lasfly.wav"
-	},
+/* precache  "weapons/blastf1a.wav misc/lasfly.wav" 
+	},*/
 
 /*QUAKED weapon_shotgun (.3 .3 1) (-16 -16 -16) (16 16 16)
-*/
+*//*
 	{
 		"weapon_shotgun", 
 		Pickup_Weapon,
@@ -1402,8 +1509,8 @@ always owned, never in the world
 		"misc/w_pkup.wav",
 		"models/weapons/g_shotg/tris.md2", EF_ROTATE,
 		"models/weapons/v_shotg/tris.md2",
-/* icon */		"w_shotgun",
-/* pickup */	"Shotgun",
+/* icon *///		"w_shotgun",
+/* pickup *//*	"Shotgun",
 		0,
 		1,
 		"Shells",
@@ -1411,11 +1518,11 @@ always owned, never in the world
 		WEAP_SHOTGUN,
 		NULL,
 		0,
-/* precache */ "weapons/shotgf1b.wav weapons/shotgr1b.wav"
+/* precache *//* "weapons/shotgf1b.wav weapons/shotgr1b.wav"
 	},
 
 /*QUAKED weapon_supershotgun (.3 .3 1) (-16 -16 -16) (16 16 16)
-*/
+
 	{
 		"weapon_supershotgun", 
 		Pickup_Weapon,
@@ -1425,8 +1532,8 @@ always owned, never in the world
 		"misc/w_pkup.wav",
 		"models/weapons/g_shotg2/tris.md2", EF_ROTATE,
 		"models/weapons/v_shotg2/tris.md2",
-/* icon */		"w_sshotgun",
-/* pickup */	"Super Shotgun",
+/* icon 		"w_sshotgun",
+/* pickup		"Super Shotgun",
 		0,
 		2,
 		"Shells",
@@ -1434,7 +1541,7 @@ always owned, never in the world
 		WEAP_SUPERSHOTGUN,
 		NULL,
 		0,
-/* precache */ "weapons/sshotf1b.wav"
+/* precache		 "weapons/sshotf1b.wav"
 	},
 
 /*QUAKED weapon_machinegun (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1732,7 +1839,7 @@ always owned, never in the world
 	//
 
 /*QUAKED ammo_shells (.3 .3 1) (-16 -16 -16) (16 16 16)
-*/
+*//*
 	{
 		"ammo_shells",
 		Pickup_Ammo,
@@ -1742,16 +1849,16 @@ always owned, never in the world
 		"misc/am_pkup.wav",
 		"models/items/ammo/shells/medium/tris.md2", 0,
 		NULL,
-/* icon */		"a_shells",
-/* pickup */	"Shells",
-/* width */		3,
+/* icon 		"a_shells",
+/* pickup 	"Shells",
+/* width 		3,
 		10,
 		NULL,
 		IT_AMMO,
 		0,
 		NULL,
 		AMMO_SHELLS,
-/* precache */ ""
+/* precache  ""
 	},
 
 /*QUAKED ammo_bullets (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1857,16 +1964,16 @@ always owned, never in the world
 		"misc/am_pkup.wav",
 		"models/items/ammo/arrows/medium/tris.md2", 0,
 		NULL,
-		"a_arrows",
-		"Arrows",
-		3,
+		/* icon */		"a_arrows",
+		/* pickup */	"Arrows",
+		/* width */		3,
 		10,
 		NULL,
 		IT_AMMO,
 		0,
 		NULL,
 		AMMO_ARROWS,
-		""
+		/* precache */ ""
 	},
 
 	//
