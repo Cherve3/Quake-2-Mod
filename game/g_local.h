@@ -103,7 +103,9 @@ typedef enum
 	AMMO_ROCKETS,
 	AMMO_GRENADES,
 	AMMO_CELLS,
-	AMMO_SLUGS
+	AMMO_SLUGS,
+	AMMO_KUNAI,
+	AMMO_ARROWS
 } ammo_t;
 
 
@@ -230,6 +232,12 @@ typedef struct
 #define WEAP_HYPERBLASTER		9 
 #define WEAP_RAILGUN			10
 #define WEAP_BFG				11
+
+#define WEAP_KATANA				12
+#define WEAP_KUNAI				13
+#define WEAP_BOW				14
+//#define WEAP_SBOMB				15
+
 
 typedef struct gitem_s
 {
@@ -500,7 +508,10 @@ extern	int	body_armor_index;
 #define MOD_TARGET_BLASTER	33
 #define MOD_FRIENDLY_FIRE	0x8000000
 
-#define MOD_PUNCH			34
+#define MOD_KATANA			34
+#define MOD_KUNAI			35
+#define MOD_BOW				36
+//#define MOD_SBOMB			37
 
 extern	int	meansOfDeath;
 
@@ -735,6 +746,9 @@ void fire_grenade2 (edict_t *self, vec3_t start, vec3_t aimdir, int damage, int 
 void fire_rocket (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, float damage_radius, int radius_damage);
 void fire_rail (edict_t *self, vec3_t start, vec3_t aimdir, int damage, int kick);
 void fire_bfg (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, float damage_radius);
+void fire_katana(edict_t *self, vec3_t start, vec3_t aim, int reach, int damage, int kick, int quiet, int mo);
+void fire_kunai(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed);
+void fire_bow(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed);
 
 //
 // g_ptrail.c
@@ -853,6 +867,8 @@ typedef struct
 	int			max_grenades;
 	int			max_cells;
 	int			max_slugs;
+	int			max_kunai;
+	int			max_arrows;
 
 	gitem_t		*weapon;
 	gitem_t		*lastweapon;
@@ -948,6 +964,8 @@ struct gclient_s
 
 	qboolean	grenade_blew_up;
 	float		grenade_time;
+	float		kunai_time;
+	float		bow_time;
 	int			silencer_shots;
 	int			weapon_sound;
 
