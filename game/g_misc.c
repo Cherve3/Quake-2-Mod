@@ -1794,6 +1794,8 @@ void teleporter_touch (edict_t *self, edict_t *other, cplane_t *plane, csurface_
 		return;
 	}
 
+	CTFPlayerResetGrapple(other);
+
 	// unlink to make sure it can't possibly interfere with KillBox
 	gi.unlinkentity (other);
 

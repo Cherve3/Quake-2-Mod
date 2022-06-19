@@ -296,7 +296,7 @@ qboolean visible (edict_t *self, edict_t *other)
 	spot2[2] += other->viewheight;
 	trace = gi.trace (spot1, vec3_origin, vec3_origin, spot2, self, MASK_OPAQUE);
 	
-	if (trace.fraction == 1.0)
+	if (trace.fraction == 1.0 && infront(self, other) == 1 && (other->light_level > 80) )
 		return true;
 	return false;
 }
@@ -320,7 +320,7 @@ qboolean infront (edict_t *self, edict_t *other)
 	VectorNormalize (vec);
 	dot = DotProduct (vec, forward);
 	
-	if (dot > 0.3)
+	if (dot > 0.3 && (other->viewheight > 21) )
 		return true;
 	return false;
 }
@@ -496,11 +496,14 @@ qboolean FindTarget (edict_t *self)
 // this is where we would check invisibility
 
 		// is client in an spot too dark to be seen?
-		if (client->light_level <= 100)
+
+		if (client->light_level <= 40)
 			return false;
 
-//		if (client->light_level <= 50)
-//			return false;
+		if (client->light_level <= 80 && (client->client->ps.pmove.pm_flags & PMF_DUCKED)){
+			gi.cprintf(client, PRINT_HIGH, "SNEAKING");
+			return false;
+		}
 
 		if (!visible (self, client))
 		{

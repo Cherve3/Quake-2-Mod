@@ -987,7 +987,8 @@ static void Kunai_Touch(edict_t *ent, edict_t *other, cplane_t *plane, csurface_
 
 	if (other->takedamage)
 	{
-		T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, 0, MOD_KUNAI);
+		T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, DAMAGE_BULLET, MOD_KUNAI);
+		//T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, 0, MOD_KUNAI);
 	}
 
 	gi.WriteByte(svc_temp_entity);
@@ -1023,8 +1024,11 @@ void fire_kunai(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed)
 	kunai->nextthink = level.time + 8000 / speed;
 	kunai->think = G_FreeEdict;
 	kunai->dmg = damage;
-	kunai->s.sound = gi.soundindex("weapons/rockfly.wav");
-	kunai->classname = "kunai";
+
+	kunai->s.sound = gi.soundindex("weapons/hgrent1a.wav");
+	kunai->classname = "Kunai";
+	//kunai->s.sound = gi.soundindex("weapons/rockfly.wav");
+	//kunai->classname = "kunai";
 
 
 	if (self->client)
@@ -1060,7 +1064,8 @@ static void Bow_Touch(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t 
 
 	if (other->takedamage)
 	{
-		T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, 0, MOD_BOW);
+		T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, DAMAGE_BULLET, MOD_BOW);
+		//T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, 0, MOD_BOW);
 	}
 
 	gi.WriteByte(svc_temp_entity);
@@ -1095,7 +1100,9 @@ void fire_bow(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed)
 	bow->nextthink = level.time + 8000 / speed;
 	bow->think = G_FreeEdict;
 	bow->dmg = damage;
-	bow->s.sound = gi.soundindex("weapons/rockfly.wav");
+	bow->s.sound = gi.soundindex("weapons/machgf4b.wav");
+	//bow->s.sound = gi.soundindex("weapons/rockfly.wav");
+
 	bow->classname = "bow";
 
 	if (self->client)
@@ -1104,3 +1111,193 @@ void fire_bow(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed)
 	gi.linkentity(bow);
 }
 
+/*
+=================
+fire_rock
+=================
+*/
+static void Rock_Explode(edict_t *ent)
+{
+	gi.multicast(ent->s.origin, MULTICAST_PHS);
+	G_FreeEdict(ent);
+}
+
+static void Rock_Touch(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf)
+{
+	if (other == ent->owner)
+		return;
+
+	if (surf && (surf->flags & SURF_SKY))
+	{
+		G_FreeEdict(ent);
+		return;
+	}
+
+	if (!other->takedamage)
+	{
+		if (ent->spawnflags & 1)
+		{
+			if (random() > 0.5){
+				
+				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/hgrenb1a.wav"), 1, ATTN_NORM, 0);
+			}
+			else{
+				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/hgrenb2a.wav"), 1, ATTN_NORM, 0);
+			}
+		}
+		else
+		{
+			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/grenlb1b.wav"), 1, ATTN_NORM, 0);
+		}
+		return;
+	}else
+	{
+		T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, DAMAGE_BULLET, MOD_ROCK);
+	}
+
+	ent->enemy = other;
+}
+
+
+
+void fire_rock(edict_t *self, vec3_t start, vec3_t aimdir, int damage, int speed, float timer, qboolean held)
+{
+	edict_t	*rock;
+	vec3_t	dir;
+	vec3_t	forward, right, up;
+
+	vectoangles(aimdir, dir);
+	AngleVectors(dir, forward, right, up);
+
+	rock = G_Spawn();
+	VectorCopy(start, rock->s.origin);
+	VectorScale(aimdir, speed, rock->velocity);
+	VectorMA(rock->velocity, 200 + crandom() * 10.0, up, rock->velocity);
+	VectorMA(rock->velocity, crandom() * 10.0, right, rock->velocity);
+	VectorSet(rock->avelocity, 300, 300, 300);
+	rock->movetype = MOVETYPE_BOUNCE;
+	rock->clipmask = MASK_SHOT;
+	rock->solid = SOLID_BBOX;
+	rock->s.effects |= EF_GRENADE;
+	VectorClear(rock->mins);
+	VectorClear(rock->maxs);
+	rock->s.modelindex = gi.modelindex("models/objects/rock/tris.md2");
+	rock->owner = self;
+	rock->touch = Rock_Touch;
+	rock->nextthink = level.time + timer;
+	rock->think = Rock_Explode;
+	rock->dmg = damage;
+	
+
+	rock->classname = "rock";
+
+	if (held)
+		rock->spawnflags = 3;
+	else
+		rock->spawnflags = 1;
+	//rock->s.sound = gi.soundindex("weapons/hgrenc1b.wav");
+
+		gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/hgrent1a.wav"), 1, ATTN_NORM, 0);
+		gi.linkentity(rock);
+
+}
+
+/*
+=================
+fire_sbomb
+=================
+*/
+static void Sbomb_Explode(edict_t *ent)
+{
+	int count = 0;
+
+	gi.multicast(ent->s.origin, MULTICAST_PHS);
+
+	for (count; count < 5; count++){
+		ent->owner->flags ^= FL_NOTARGET;
+	}
+		
+	ent->owner->flags = !(ent->owner->flags ^ FL_NOTARGET);
+	
+	G_FreeEdict(ent);
+}
+
+static void Sbomb_Touch(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf)
+{
+	if (other == ent->owner)
+		return;
+
+	if (surf && (surf->flags & SURF_SKY))
+	{
+		G_FreeEdict(ent);
+		return;
+	}
+
+	if (!other->takedamage)
+	{
+		if (ent->spawnflags & 1)
+		{
+			if (random() > 0.5){
+
+				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/hgrenb1a.wav"), 1, ATTN_NORM, 0);
+			}
+			else{
+				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/hgrenb2a.wav"), 1, ATTN_NORM, 0);
+			}
+		}
+		else
+		{
+			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/grenlb1b.wav"), 1, ATTN_NORM, 0);
+		}
+		return;
+	}
+	else
+	{
+		T_Damage(other, ent, ent->owner, ent->velocity, ent->s.origin, plane->normal, ent->dmg, 0, DAMAGE_BULLET, MOD_SBOMB);
+	}
+
+	ent->enemy = other;
+}
+
+
+
+void fire_sbomb(edict_t *self, vec3_t start, vec3_t aimdir, int damage, int speed, float timer, qboolean held)
+{
+	edict_t	*sbomb;
+	vec3_t	dir;
+	vec3_t	forward, right, up;
+
+	vectoangles(aimdir, dir);
+	AngleVectors(dir, forward, right, up);
+
+	sbomb = G_Spawn();
+	VectorCopy(start, sbomb->s.origin);
+	VectorScale(aimdir, speed, sbomb->velocity);
+	VectorMA(sbomb->velocity, 200 + crandom() * 10.0, up, sbomb->velocity);
+	VectorMA(sbomb->velocity, crandom() * 10.0, right, sbomb->velocity);
+	VectorSet(sbomb->avelocity, 300, 300, 300);
+	sbomb->movetype = MOVETYPE_BOUNCE;
+	sbomb->clipmask = MASK_SHOT;
+	sbomb->solid = SOLID_BBOX;
+	sbomb->s.effects |= EF_GRENADE;
+	VectorClear(sbomb->mins);
+	VectorClear(sbomb->maxs);
+	sbomb->s.modelindex = gi.modelindex("models/objects/sbomb/tris.md2");
+	sbomb->owner = self;
+	sbomb->touch = Sbomb_Touch;
+	sbomb->nextthink = level.time + timer;
+	sbomb->think = Sbomb_Explode;
+	sbomb->dmg = damage;
+
+
+	sbomb->classname = "sbomb";
+
+	if (held)
+		sbomb->spawnflags = 3;
+	else
+		sbomb->spawnflags = 1;
+
+	gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/hgrent1a.wav"), 1, ATTN_NORM, 0);
+	gi.linkentity(sbomb);
+
+}
